@@ -1,0 +1,12 @@
+# Build folders
+/build/
+app/build/
+
+# IDE and local settings
+.gradle/
+.idea/
+local.properties
+*.iml
+
+# Secret files
+**/google-services.json
