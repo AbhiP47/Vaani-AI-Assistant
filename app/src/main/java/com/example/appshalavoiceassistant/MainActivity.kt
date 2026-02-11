@@ -22,6 +22,13 @@ import com.google.firebase.ai.type.Voice
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+
+
 
 @OptIn(PublicPreviewAPI::class)
 class MainActivity : ComponentActivity() {
@@ -62,9 +69,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // CALLED FROM VoiceCallScreen
     fun startVoiceBackend(viewModel: VoiceChatViewModel) {
         lifecycleScope.launch {
+            if (!hasMicPermission()) {
+                viewModel.onError("Microphone permission not granted")
+                return@launch
+            }
+
             try {
                 viewModel.onConnecting()
 
@@ -75,13 +86,15 @@ class MainActivity : ComponentActivity() {
                 liveSession?.startAudioConversation()
                 viewModel.onConnected()
 
-            } catch (e: SecurityException) {
-                viewModel.onError("Microphone permission error")
+            } catch (se: SecurityException) {
+                // Permission revoked while app was running
+                viewModel.onError("Microphone permission revoked")
             } catch (e: Exception) {
                 viewModel.onError(e.message ?: "Backend connection failed")
             }
         }
     }
+
 
     fun stopVoiceBackend(viewModel: VoiceChatViewModel) {
         lifecycleScope.launch {
@@ -99,4 +112,87 @@ class MainActivity : ComponentActivity() {
         liveSession?.stopAudioConversation()
         liveSession = null
     }
+
+
+    fun muteVoice(viewModel: VoiceChatViewModel) {
+        lifecycleScope.launch {
+            try {
+                liveSession?.stopAudioConversation()
+                viewModel.onMuted()
+            } catch (e: Exception) {
+                viewModel.onError("Failed to mute")
+            }
+        }
+    }
+
+
+    private fun hasMicPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun unmuteVoice(viewModel: VoiceChatViewModel) {
+        lifecycleScope.launch {
+
+            // ✅ Explicit permission check
+            if (!hasMicPermission()) {
+                viewModel.onError("Microphone permission not granted")
+                return@launch
+            }
+
+            try {
+                // 🎙 Restart mic → Gemini listens again
+                liveSession?.startAudioConversation()
+                viewModel.onConnected()
+
+            } catch (se: SecurityException) {
+                // 🔐 Permission revoked while app is running
+                viewModel.onError("Microphone permission revoked")
+
+            } catch (e: Exception) {
+                viewModel.onError("Failed to unmute")
+            }
+        }
+    }
+
+
+    fun holdVoice(viewModel: VoiceChatViewModel) {
+        lifecycleScope.launch {
+            try {
+                liveSession?.stopAudioConversation()
+                viewModel.onHold()
+            } catch (e: Exception) {
+                viewModel.onError("Failed to hold")
+            }
+        }
+    }
+
+
+    fun resumeVoice(viewModel: VoiceChatViewModel) {
+        lifecycleScope.launch {
+            if (!hasMicPermission()) {
+                viewModel.onError("Microphone permission not granted")
+                return@launch
+            }
+
+            try {
+                viewModel.onHold()
+
+                if (liveSession == null) {
+                    liveSession = liveModel.connect()
+                }
+
+                liveSession?.startAudioConversation()
+                viewModel.onHold()
+
+            } catch (se: SecurityException) {
+                viewModel.onError("Microphone permission revoked")
+            } catch (e: Exception) {
+                viewModel.onError("Resume failed")
+            }
+        }
+    }
+
 }

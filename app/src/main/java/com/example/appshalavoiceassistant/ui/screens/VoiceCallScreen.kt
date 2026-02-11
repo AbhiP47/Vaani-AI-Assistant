@@ -50,8 +50,10 @@ fun VoiceCallScreen(
         // STATUS TEXT
         Text(
             text = when (connectionState) {
-                is ConnectionStatus.Connected -> "VAANI सफलतापूर्वक शुरू हो गई है ✅"
-                is ConnectionStatus.Loading -> "कनेक्ट हो रहा है..."
+                is  ConnectionStatus.Muted -> "🔇 म्यूट है (MUTE)"
+                is ConnectionStatus.Connected -> "\uD83C\uDFA7 VAANI सुन रही है… \uD83D\uDC9C\n"
+                is ConnectionStatus.Loading -> "\uD83D\uDD04 कनेक्ट हो रहा है…..."
+                is ConnectionStatus.Hold -> "⏳ होल्ड पर है "
                 is ConnectionStatus.Error ->
                     (connectionState as ConnectionStatus.Error).message
                 else -> "तैयार (Ready)"
@@ -85,13 +87,21 @@ fun VoiceCallScreen(
 
             // MUTE BUTTON
             IconButton(
-                onClick = { viewModel.toggleMute() },
+                onClick = {
+                    val newMutedState = !isMuted
+                    viewModel.toggleMute()
+
+                    if (newMutedState) {
+                        // 🔴 TRUE MUTE
+                        activity.muteVoice(viewModel)
+                    } else {
+                        // 🟢 UNMUTE
+                        activity.unmuteVoice(viewModel)
+                    }
+                },
                 modifier = Modifier
                     .size(60.dp)
-                    .background(
-                        Color.White.copy(alpha = 0.1f),
-                        CircleShape
-                    )
+                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
             ) {
                 Icon(
                     imageVector = if (isMuted)
@@ -105,25 +115,28 @@ fun VoiceCallScreen(
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            // HOLD BUTTON (UI ONLY)
+
+            // HOLD BUTTON
             IconButton(
-                onClick = { isOnHold = !isOnHold },
+                onClick = {
+                    isOnHold = !isOnHold
+                    if (isOnHold) {
+                        activity.holdVoice(viewModel)
+                    } else {
+                        activity.resumeVoice(viewModel)
+                    }
+                },
                 modifier = Modifier
                     .size(60.dp)
-                    .background(
-                        Color.White.copy(alpha = 0.1f),
-                        CircleShape
-                    )
+                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
             ) {
                 Icon(
-                    imageVector = if (isOnHold)
-                        Icons.Default.PlayArrow
-                    else
-                        Icons.Default.Pause,
+                    imageVector = if (isOnHold) Icons.Default.PlayArrow else Icons.Default.Pause,
                     contentDescription = "Hold",
                     tint = Color.White
                 )
             }
+
 
             Spacer(modifier = Modifier.width(20.dp))
 

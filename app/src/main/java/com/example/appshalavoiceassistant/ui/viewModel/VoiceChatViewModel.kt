@@ -4,10 +4,15 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+
 sealed class ConnectionStatus {
     object Idle : ConnectionStatus()
     object Loading : ConnectionStatus()
     object Connected : ConnectionStatus()
+    object Muted : ConnectionStatus()
+
+    object Hold : ConnectionStatus()
+
     data class Error(val message: String) : ConnectionStatus()
 }
 
@@ -36,7 +41,20 @@ class VoiceChatViewModel : ViewModel() {
         _connectionState.value = ConnectionStatus.Idle
     }
 
+    fun onMuted() {
+        _connectionState.value = ConnectionStatus.Muted
+    }
+
     fun toggleMute() {
         _isMuted.value = !_isMuted.value
     }
+
+    fun onHold() {
+        _connectionState.value = ConnectionStatus.Hold
+    }
+
+    fun onResumed() {
+        _connectionState.value = ConnectionStatus.Connected
+    }
+
 }
