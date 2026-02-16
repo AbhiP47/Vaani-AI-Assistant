@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
             modelName = "gemini-2.5-flash-native-audio-preview-12-2025",
             systemInstruction = content {
                 text(
-                    "You are Vaani, a friendly Indian AI assistant. " +
+                    "You are Vaani, a friendly Indian AI assistant." +
+                            "At first you must greet the listener and introduce yourself ." +
                             "Respond in the speaker's language."
                 )
             },
