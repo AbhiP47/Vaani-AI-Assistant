@@ -42,11 +42,8 @@ fun NavGraph() {
         modifier = Modifier.fillMaxSize()
     ) {
         composable(Routes.SPLASH) {
-            SplashScreen(onTimeout = {
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.SPLASH) { inclusive = true }
-                }
-            })
+            // FIX: Just pass the navController here
+            SplashScreen(navController = navController)
         }
 
         composable(Routes.HOME) {
@@ -60,13 +57,10 @@ fun NavGraph() {
 
         composable(Routes.VOICE_CALL) {
             val voiceViewModel: VoiceChatViewModel = viewModel()
-
             VoiceCallScreen(
                 viewModel = voiceViewModel,
                 onEndCall = {
-                    // 1. Tell the backend to stop
                     activity?.stopVoiceBackend(voiceViewModel)
-                    // 2. Navigate back
                     navController.popBackStack(Routes.HOME, inclusive = false)
                 }
             )
